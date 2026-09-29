@@ -255,8 +255,3 @@ Esperado:
 |---|---|---|---|
 | | | | |
 | | | | |
-
-
-## Encerramento
-
-Sprint 1.0 homologada explicitamente em 2026-09-28.

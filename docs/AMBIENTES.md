@@ -19,6 +19,7 @@ Manter desenvolvimento/homologação e produção fisicamente separados.
 - Firebase: `sinaldesk`
 - Uso: somente versões homologadas
 - Domínio oficial: `https://sinal.app.br`
+- Versão promovida: Sprint 1.1
 
 ## Regra de promoção
 

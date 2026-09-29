@@ -314,15 +314,29 @@ O código visível inicial do sinal será derivado do ID Firestore (`S-XXXXXX`).
 
 Numeração sequencial por tenant fica adiada até existir mecanismo transacional seguro no backend.
 
+
+
 ---
 
 ## DP-017 — Botão Voltar em overlays mobile
 
-**Status:** Planejada
+**Status:** Implementada na Sprint 1.1
 
-Em dispositivos móveis, overlays de navegação como composer, modal, drawer ou painel devem integrar-se ao histórico da SPA.
+Em dispositivos móveis, composer e detalhe de sinal integram-se ao histórico da SPA.
 
-Quando um overlay estiver aberto, o botão/gesto nativo de voltar deve fechá-lo antes de navegar para a página anterior do navegador.
+Quando um overlay está aberto, o botão/gesto nativo de voltar fecha primeiro o overlay, preservando a aplicação aberta.
 
-A implementação deve utilizar `history.pushState` / `popstate` ou mecanismo equivalente.
+A implementação utiliza `history.pushState` / `popstate`.
 
+
+---
+
+## DP-018 — Central de atendimento
+
+**Status:** Aprovada
+
+`Central` é a área operacional dos perfis `admin`, `supervisor` e `agente`.
+
+Ela mostra a fila do tenant e permite iniciar o atendimento.
+
+`Meus sinais` continua representando os sinais que o próprio usuário criou como solicitante.

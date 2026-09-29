@@ -1,88 +1,87 @@
 # Sinal — Firestore Setup PRD
 
-## Promoção da Sprint 1.0
+## Promoção da Sprint 1.1
 
-Este roteiro configura somente o ambiente de produção:
+Ambiente:
 
 `Firebase projectId: sinaldesk`
 
----
+## 1. Pré-condição
 
-## Usuário PRD
+A estrutura PRD da Sprint 1.0 deve continuar existente:
+
+```text
+users/9yY4oQdd4oTzXMuj8GuUhkfZNMg2
+
+tenants/sinal-interno
+
+tenants/sinal-interno/members/9yY4oQdd4oTzXMuj8GuUhkfZNMg2
+```
+
+Usuário PRD:
 
 - E-mail: `walter.udisson@gmail.com`
-- UID PRD: `9yY4oQdd4oTzXMuj8GuUhkfZNMg2`
+- UID: `9yY4oQdd4oTzXMuj8GuUhkfZNMg2`
 
-## Perfil global
+Se a Sprint 1.0 já está operante em PRD, não é necessário recriar esses documentos.
 
-Crie, se ainda não existir:
+## 2. Atualizar Security Rules
 
-`users/9yY4oQdd4oTzXMuj8GuUhkfZNMg2`
-
-Campos:
-
-- `displayName`: `Walter Udisson`
-- `email`: `walter.udisson@gmail.com`
-- `platformRole`: `superadmin`
-- `status`: `active`
-- `defaultTenantId`: `sinal-interno`
-- `createdAt`: timestamp atual
-- `updatedAt`: timestamp atual
-
-## Tenant inicial
-
-Crie, se ainda não existir:
-
-`tenants/sinal-interno`
-
-Campos:
-
-- `name`: `Sinal`
-- `slug`: `sinal-interno`
-- `status`: `active`
-- `plan`: `internal`
-- `createdAt`: timestamp atual
-- `updatedAt`: timestamp atual
-
-## Membership PRD
-
-Crie:
-
-`tenants/sinal-interno/members/9yY4oQdd4oTzXMuj8GuUhkfZNMg2`
-
-Campos:
-
-- `displayName`: `Walter Udisson`
-- `email`: `walter.udisson@gmail.com`
-- `role`: `admin`
-- `status`: `active`
-- `joinedAt`: timestamp atual
-
-## Security Rules
-
-Publique o arquivo raiz:
-
-`firestore.rules`
-
-em:
+No Firebase Console de produção:
 
 **Firestore Database → Rules**
 
-## Tickets
+Substitua as regras atuais pelo conteúdo do arquivo:
 
-Não crie manualmente a coleção `tickets`.
+`firestore.rules`
 
-O primeiro sinal em produção criará:
+e clique em **Publish**.
 
-`tenants/sinal-interno/tickets/{ticketId}`
+## 3. O que muda nesta versão
 
-## Smoke test PRD
+Perfis `admin`, `supervisor` e `agente` do tenant passam a poder:
 
-Após DNS/HTTPS estarem disponíveis:
+- ler os sinais da organização;
+- visualizar a Central;
+- assumir sinal ainda aberto e sem responsável.
+
+Ao assumir, somente estes campos podem mudar:
+
+- `status`: `open` → `in_progress`
+- `assigneeUid`
+- `assigneeName`
+- `assigneeEmail`
+- `updatedAt`
+
+## 4. Resultado esperado ao assumir
+
+No usuário PRD atual:
+
+```text
+status: in_progress
+assigneeUid: 9yY4oQdd4oTzXMuj8GuUhkfZNMg2
+assigneeName: Walter Udisson
+assigneeEmail: walter.udisson@gmail.com
+updatedAt: <timestamp servidor>
+```
+
+## 5. Nenhuma nova coleção manual
+
+Esta sprint não exige criação manual de coleção ou documento adicional.
+
+## 6. Smoke test PRD
+
+Após publicar os arquivos e as Rules:
 
 1. abrir `https://sinal.app.br`;
 2. fazer login;
-3. confirmar tenant `Sinal`;
-4. criar um sinal de teste;
-5. conferir o documento no Firestore PRD;
-6. realizar logout.
+3. abrir `Central`;
+4. confirmar que os sinais aparecem;
+5. abrir um sinal novo;
+6. clicar em `Assumir sinal`;
+7. confirmar toast `Sinal assumido`;
+8. confirmar que o ticket sai de `Novos` e aparece em `Meus`;
+9. conferir os campos no Firestore PRD;
+10. validar logout.
+
+A homologação funcional completa já foi executada em HML. Em PRD é necessário apenas o smoke test orientado à promoção.

@@ -4,7 +4,7 @@ Repositório de produção do Sinal.
 
 ## Versão promovida
 
-`Sprint 1.0 — Mandar um sinal`
+`Sprint 1.1 — Central de atendimento e assumir um sinal`
 
 ## Backend
 
