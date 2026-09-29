@@ -1,9 +1,25 @@
-# Sinal
+# Sinal — Produção
 
-Repositório de **produção** do Sinal.
+Repositório de produção do Sinal.
 
-- Firebase: `sinaldesk`
-- Domínio oficial: `https://sinal.app.br`
-- Homologação: `Walterudisson/sinal-HML`
+## Versão promovida
 
-> Somente versões explicitamente homologadas devem ser promovidas para este repositório.
+`Sprint 1.0 — Mandar um sinal`
+
+## Backend
+
+Firebase PRD:
+
+`projectId: sinaldesk`
+
+## Domínio oficial
+
+`https://sinal.app.br`
+
+## Origem da promoção
+
+Versão homologada no repositório:
+
+`Walterudisson/sinal-HML`
+
+Somente versões explicitamente homologadas devem ser promovidas para este repositório.
