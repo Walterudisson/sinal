@@ -2,8 +2,8 @@
 
 ## Central de atendimento e assumir um sinal
 
-**Status:** Homologada e promovida para PRD  
-**Origem:** HML homologado  
+**Status:** Em homologação  
+**Ambiente:** HML  
 **Data:** 2026-09-28
 
 ## Objetivo
