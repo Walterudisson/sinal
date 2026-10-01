@@ -37,7 +37,7 @@ export async function markAllNotificationsRead(context, notifications) {
 export async function enablePushNotifications(context, registration) {
   if (!('Notification' in window)) throw new Error('Este navegador não oferece notificações Web Push.');
   if (!(await isSupported())) throw new Error('FCM não é suportado neste navegador/dispositivo.');
-  if (notificationConfig.vapidKey.startsWith('SUBSTITUA_')) throw new Error('A chave pública VAPID do ambiente HML ainda não foi configurada.');
+  if (notificationConfig.vapidKey.startsWith('SUBSTITUA_')) throw new Error('As notificações push ainda não estão configuradas neste ambiente.');
 
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('Permissão de notificações não concedida.');

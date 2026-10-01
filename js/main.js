@@ -195,7 +195,7 @@ function refreshPushUi() {
     enable.classList.add('hidden'); disable.classList.add('hidden'); return;
   }
   if (!state.configured) {
-    status.textContent = 'HML aguardando configuração da chave Web Push (VAPID).';
+    status.textContent = 'As notificações push ainda não estão configuradas neste ambiente.';
     enable.classList.remove('hidden'); disable.classList.add('hidden'); return;
   }
   if (state.permission === 'denied') {
