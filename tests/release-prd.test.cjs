@@ -18,7 +18,7 @@ test('identidade e Firebase são os de produção', () => {
   assert.match(config, /projectId:\s*'sinaldesk'/);
   assert.match(sw, /projectId:\s*'sinaldesk'/);
   assert.doesNotMatch(sw, /sinaldesk-hml/);
-  assert.match(sw, /sinal-shell-prd-1\.4\.3/);
+  assert.match(sw, /sinal-shell-prd-1\.4\.3-fix1/);
 });
 
 test('a UX-1 e resolução foram conectadas ao app PRD', () => {
