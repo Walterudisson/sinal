@@ -37,24 +37,22 @@ cd functions && npm ci && npm test
 
 **Importante:** esta verificação não publica frontend, Firestore Rules nem Cloud Functions.
 
-## Sequência de publicação após autorização específica
+## Sequência de publicação com regras de transição
 
-A mudança de regras cria dependência entre frontend e backend:
+**Não fazer merge agora.** O deploy da função `notifyTicketStatus` no PRD foi realizado e as três funções foram confirmadas via `functions:list`.
 
-- O frontend **antigo** de PRD assume sinais por atualização simples, sem `lastEventId`; a nova regra exige o evento atômico correspondente.
-- O frontend **novo** exige as novas regras para assumir e resolver sinais.
-- Portanto, **publicar as regras definitivas antes da mudança do frontend pode interromper os atendimentos antigos**; publicar o frontend antes delas pode deixar as novas ações indisponíveis temporariamente.
+A troca de frontend não é atômica para todas as sessões abertas e o service worker pode manter clientes com a interface anterior. Por isso, `firestore.transition.rules` foi preparada a partir das novas regras, acrescentando **somente** a atribuição legada já permitida pelas regras anteriores. As restrições de acesso à solução técnica privada e de resolução em lote permanecem iguais às definitivas.
 
-Procedimento sugerido para uma janela curta de implantação coordenada, com testes em cada etapa:
+1. **Antes de publicar:** na branch da release, executar os testes estáticos `node --test tests/ux1.test.cjs tests/release-prd.test.cjs`, `cd functions && npm ci && npm audit && npm test` e, na pasta `tests/security`, `npm install` e `npm test`. Os testes de segurança usam `demo-sinal-prd-release` e emulador local, nunca dados reais do projeto de produção.
+2. **Verificação de segurança e autorização separada:** comparar `firestore.transition.rules` com `firestore.rules` e validar que a única concessão adicional é a atribuição antiga já autorizada em PRD. Conferir a janela da implantação e avisar usuários se necessário.
+3. **Regras de transição primeiro:** mediante autorização, a partir da raiz, executar `npx firebase-tools deploy --only firestore:rules --project sinaldesk --config firebase.transition.json`. Isso libera tanto o fluxo novo quanto o antigo, sem liberar resolução isolada.
+4. **Merge e publicação do frontend:** somente após confirmar o sucesso das regras temporárias, mudar PR #6 de rascunho para revisão e realizar o merge autorizado. Acompanhar a publicação do GitHub Pages de `sinal.app.br` e a renovação do cache da PWA.
+5. **Smoke test PRD:** solicitante e atendente, criar/assumir, enviar mensagem, resolver com e sem mensagem pública, privacidade, notificações e push, navegação e rolagem. Validar contas e tickets criados apenas para o teste; não interagir indevidamente com solicitações reais.
+6. **Regras definitivas:** quando o frontend atualizado e as sessões antigas tiverem sido tratados, e mediante **nova autorização**, publicar `npx firebase-tools deploy --only firestore:rules --project sinaldesk --config firebase.json`. **Não antecipar esse passo:** ele volta a rejeitar clientes antigos que fazem atribuição simples. Realizar testes de regressão e registrar data da retirada da compatibilidade.
 
-1. Confirmar homologação, backup/exportação apropriada, permissões de acesso e janela com baixo volume. **Confirmar explicitamente o projeto Firebase de PRD em todos os comandos.**
-2. Implantar primeiro a nova função `notifyTicketStatus` no projeto de PRD usando CLI, sem alterar as funções existentes. Isso é compatível com a versão anterior que ainda não gera `statusEvents`.
-3. Preparar a publicação de `firestore.rules` de PRD, conferindo os diffs contra HML. **Não publicá-las antes do instante de transição sem planejar a compatibilidade com o frontend antigo.**
-4. Aprovar merge de PRD para acionar a publicação GitHub Pages. Publicar imediatamente as novas regras no Firestore do projeto de PRD. Avisar aos usuários sobre possível intervalo curto até interface e regras estarem sincronizadas; se a indisponibilidade não for aceitável, implementar antes uma transição de regras retrocompatíveis em PR separado.
-5. Verificar ambiente real `https://sinal.app.br/` com dois perfis: abrir, assumir, conversar, resolver sem mensagem pública e com mensagem pública; confirmar que o solicitante não acessa documento privado ou conteúdo sensível em notificações. Confirmar push, clique, botão Voltar e PWA instalada.
-6. Se ocorrer falha, interromper novos merges/implantações e avaliar rollback **conjunto** das regras e do frontend, não apenas uma das partes.
+**Rollback:** não publicar as regras definitivas caso a interface nova falhe. Enquanto as regras temporárias estão ativas, o frontend antigo continua autorizado a assumir sinais. Se necessário, reverter o frontend e conservar a regra de transição até encerrar o incidente; em todos os casos, conferir os eventos e dados antes de qualquer reversão de regras.
 
-**Não executar deploy integral de todas as Functions indiscriminadamente**: nesta release, a função adicional é `notifyTicketStatus` e as funções atuais mantêm a região de PRD. Não executar `firebase deploy` sem `--project` e `--only` adequados.
+**Atenção:** deploy Firestore não é efetuado por GitHub Pages. Usar sempre projeto explícito `--project sinaldesk`; nunca usar `--only functions` genérico nesta etapa. A função de status já está implantada e a atualização de `functions/package.json` nesta branch não implica novo deploy.
 
 ## Estado das aprovações
 
