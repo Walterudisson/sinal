@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sinal-shell-prd-1.5.7-chat1';
+const CACHE_NAME = 'sinal-shell-prd-1.5.8-service1';
 const APP_SHELL = [
   './offline.html',
   './manifest.webmanifest',
