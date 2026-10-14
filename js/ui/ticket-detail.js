@@ -18,6 +18,7 @@ let messagesSnapshotInitialized = false;
 let previousMessageIds = [];
 let activeView = 'details';
 let substateClosePending = false;
+let followKeyboardViewport = false;
 
 const publicSuggestions = [
   'Informamos que os ajustes necessários foram realizados e o problema relatado foi solucionado.',
@@ -40,9 +41,16 @@ function setTicketView(view) {
   }
   const back = document.querySelector('#ticket-view-back');
   back.classList.toggle('hidden', view === 'details');
+  const isRequester = selectedTicket?.requesterUid === currentContext?.firebaseUser?.uid;
   document.querySelector('#ticket-view-label').textContent =
-    view === 'details' ? 'Detalhes do sinal' : view === 'conversation' ? 'Conversa com o solicitante' : 'Finalizar atendimento';
-  document.querySelector('#ticket-detail .ticket-detail-panel').classList.toggle('is-immersive', view !== 'details');
+    view === 'details'
+      ? 'Detalhes do sinal'
+      : view === 'conversation'
+        ? (isRequester ? 'Conversa com o atendimento' : 'Conversa com o solicitante')
+        : 'Finalizar atendimento';
+  const panel = document.querySelector('#ticket-detail .ticket-detail-panel');
+  panel.classList.toggle('is-immersive', view !== 'details');
+  panel.classList.toggle('is-conversation', view === 'conversation');
   document.querySelectorAll('#ticket-detail [data-close-ticket-detail]').forEach((element) => {
     if (element.tagName === 'BUTTON') element.classList.toggle('hidden', view !== 'details');
   });
@@ -71,6 +79,23 @@ function openSubView(view) {
     if (selectedTicket && activeView === view) {
       scroller.scrollTop = view === 'conversation' ? scroller.scrollHeight : 0;
     }
+  });
+}
+
+function isConversationNearBottom(threshold = 140) {
+  const scroller = document.querySelector('#conversation-scroll');
+  if (!scroller) return false;
+  return scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop < threshold;
+}
+
+function scrollConversationToBottom() {
+  const scroller = document.querySelector('#conversation-scroll');
+  if (!scroller || activeView !== 'conversation') return;
+  requestAnimationFrame(() => {
+    scroller.scrollTop = scroller.scrollHeight;
+    requestAnimationFrame(() => {
+      scroller.scrollTop = scroller.scrollHeight;
+    });
   });
 }
 
@@ -235,8 +260,10 @@ export function initTicketDetail(options) {
     const spinner = document.querySelector('#message-submit-spinner');
     const label = document.querySelector('#message-submit-label');
 
+    const icon = document.querySelector('#message-submit-icon');
     button.disabled = true;
     spinner.classList.remove('hidden');
+    icon?.classList.add('hidden');
     label.textContent = 'Enviando...';
     try {
       await onSendMessage(selectedTicket, body);
@@ -245,14 +272,41 @@ export function initTicketDetail(options) {
     } finally {
       button.disabled = false;
       spinner.classList.add('hidden');
+      icon?.classList.remove('hidden');
       label.textContent = 'Enviar';
     }
   });
 
-  document.querySelector('#message-body').addEventListener('input', (event) => {
+  const messageBody = document.querySelector('#message-body');
+
+  messageBody.addEventListener('focus', () => {
+    followKeyboardViewport = isConversationNearBottom(220);
+    if (followKeyboardViewport) {
+      window.setTimeout(scrollConversationToBottom, 60);
+      window.setTimeout(scrollConversationToBottom, 220);
+    }
+  });
+
+  messageBody.addEventListener('blur', () => {
+    followKeyboardViewport = false;
+  });
+
+  messageBody.addEventListener('input', (event) => {
     const el = event.currentTarget;
+    const shouldFollow = followKeyboardViewport || isConversationNearBottom(180);
     el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    if (shouldFollow) scrollConversationToBottom();
+  });
+
+  window.visualViewport?.addEventListener('resize', () => {
+    if (
+      activeView === 'conversation' &&
+      document.activeElement === messageBody &&
+      followKeyboardViewport
+    ) {
+      scrollConversationToBottom();
+    }
   });
 
   document.querySelector('#ticket-detail').addEventListener('keydown', (event) => {
@@ -268,6 +322,7 @@ export function openTicketDetail(ticket, observeMessages) {
   }
   selectedTicket = ticket;
   substateClosePending = false;
+  followKeyboardViewport = false;
   setTicketView('details');
   renderTicket(ticket);
   messagesSnapshotInitialized = false;
@@ -418,6 +473,21 @@ function renderTicket(ticket) {
   }
 }
 
+function formatMessageStamp(timestamp) {
+  if (!timestamp?.toDate) return 'agora';
+  const date = timestamp.toDate();
+  const now = new Date();
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+
+  return new Intl.DateTimeFormat('pt-BR', sameDay
+    ? { hour: '2-digit', minute: '2-digit' }
+    : { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }
+  ).format(date);
+}
+
 function renderMessages(messages) {
   const list = document.querySelector('#conversation-list');
   const empty = document.querySelector('#conversation-empty');
@@ -426,11 +496,14 @@ function renderMessages(messages) {
 
   const scroller = document.querySelector('#conversation-scroll');
   const nearBottom = scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop < 100;
+  const firstSnapshot = !messagesSnapshotInitialized;
   const nextMessageIds = messages.map((message) => message.id);
-  const hasNewMessage = messagesSnapshotInitialized && messages.length > previousMessageIds.length
+  const hasNewMessage = !firstSnapshot && messages.length > previousMessageIds.length
     && nextMessageIds.some((id) => !previousMessageIds.includes(id));
   previousMessageIds = nextMessageIds;
-  const shouldFollow = hasNewMessage && nearBottom && activeView === 'conversation';
+  const shouldFollow =
+    activeView === 'conversation' &&
+    (firstSnapshot || (hasNewMessage && nearBottom));
   messagesSnapshotInitialized = true;
 
   count.textContent = String(messages.length);
@@ -439,14 +512,17 @@ function renderMessages(messages) {
   list.innerHTML = messages.map((message) => {
     const mine = message.authorUid === uid;
     return `
-      <article class="message-bubble ${mine ? 'mine' : 'theirs'}">
-        <div class="whitespace-pre-wrap break-words text-sm leading-6">${escapeHtml(message.body)}</div>
-        <div class="message-meta">${escapeHtml(message.authorName || 'Usuário')} · ${escapeHtml(formatDate(message.createdAt))}</div>
+      <article class="message-row ${mine ? 'mine' : 'theirs'}">
+        <div class="message-bubble ${mine ? 'mine' : 'theirs'}">
+          ${mine ? '' : `<div class="message-author">${escapeHtml(message.authorName || 'Usuário')}</div>`}
+          <div class="message-text">${escapeHtml(message.body)}</div>
+          <div class="message-meta">${escapeHtml(formatMessageStamp(message.createdAt))}</div>
+        </div>
       </article>`;
   }).join('');
 
-  // Apenas acompanhar novas mensagens quando o usuário já estiver perto do final.
-  // Nunca mover a tela ao abrir um sinal ou ao atualizar um snapshot existente.
+  // Ao entrar na conversa, mostrar a mensagem mais recente.
+  // Depois disso, só acompanhar novas mensagens se o usuário já estiver perto do final.
   if (shouldFollow) {
     requestAnimationFrame(() => { scroller.scrollTop = scroller.scrollHeight; });
   }
