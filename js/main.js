@@ -191,7 +191,18 @@ function openConversation(ticket) {
 
 function ensureCentralInitialized(context) {
   if (centralInitialized) return;
-  initCentral({ context, onOpenTicket: openConversation });
+  initCentral({
+    context,
+    onOpenTicket: openConversation,
+    onClaimTicket: async (ticket) => {
+      try {
+        await claimTicket(currentContext, ticket);
+        showToast(`${ticket.code} agora está com você.`, 'success', { title: 'Sinal assumido' });
+      } catch (error) {
+        showToast(error?.message || 'Não foi possível assumir este sinal.', 'error', { title: 'Falha ao assumir' });
+      }
+    }
+  });
   centralInitialized = true;
 }
 
@@ -207,7 +218,7 @@ function refreshPushUi() {
     enable.classList.add('hidden'); disable.classList.add('hidden'); return;
   }
   if (!state.configured) {
-    status.textContent = 'As notificações push ainda não estão configuradas neste ambiente.';
+    status.textContent = 'HML aguardando configuração da chave Web Push (VAPID).';
     enable.classList.remove('hidden'); disable.classList.add('hidden'); return;
   }
   if (state.permission === 'denied') {
