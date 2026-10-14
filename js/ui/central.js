@@ -10,6 +10,7 @@ let currentCategory = 'all';
 let currentSort = 'priority';
 let currentSearch = '';
 let onOpenTicket = null;
+let onClaimTicket = null;
 
 const filterCopy = Object.freeze({
   all: ['Todos os sinais', 'Fila completa da organização.'],
@@ -29,6 +30,7 @@ const priorityRank = Object.freeze({
 export function initCentral(options) {
   currentContext = options.context;
   onOpenTicket = options.onOpenTicket;
+  onClaimTicket = options.onClaimTicket;
 
   document.querySelectorAll('[data-central-filter]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -117,6 +119,25 @@ function renderCentral() {
   resultCount.textContent = filtered.length === 1 ? '1 sinal' : `${filtered.length} sinais`;
   list.innerHTML = filtered.map(markup).join('');
 
+  list.querySelectorAll('[data-claim-ticket]').forEach((button) => {
+    button.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      const ticket = tickets.find((item) => item.id === button.dataset.claimTicket);
+      if (!ticket || !onClaimTicket) return;
+
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = 'Assumindo...';
+
+      try {
+        await onClaimTicket(ticket);
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    });
+  });
+
   list.querySelectorAll('[data-open-ticket]').forEach((card) => {
     const open = () => {
       const ticket = tickets.find((item) => item.id === card.dataset.openTicket);
@@ -124,6 +145,7 @@ function renderCentral() {
     };
     card.addEventListener('click', open);
     card.addEventListener('keydown', (event) => {
+      if (event.target !== card) return;
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         open();
@@ -216,7 +238,7 @@ function markup(ticket) {
           <span class="ticket-badge ${ticket.status === 'in_progress' ? 'bg-indigo-50 text-indigo-700' : ticket.status === 'resolved' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700'}">${escapeHtml(status)}</span>
           <span class="ticket-badge ${priorityClass}">${escapeHtml(priority)}</span>
         </div>
-        <h3 class="mt-2 truncate text-sm font-extrabold text-slate-950 sm:text-base">${escapeHtml(ticket.title)}</h3>
+        <h3 class="ticket-title-clamp mt-2 text-sm font-extrabold text-slate-950 sm:text-base">${escapeHtml(ticket.title)}</h3>
         <p class="ticket-smart-context">${escapeHtml(contextLabel)}</p>
         <div class="ticket-smart-meta">
           <span>${escapeHtml(ticket.requesterName)}</span>
@@ -224,6 +246,13 @@ function markup(ticket) {
           <span title="${escapeHtml(formatDate(ticket.createdAt))}">${escapeHtml(formatRelativeAge(ticket.createdAt))}</span>
         </div>
       </div>
-      <span class="ticket-smart-open" aria-hidden="true">→</span>
+      <div class="flex items-center gap-2">
+        ${ticket.status === 'open' && !ticket.assigneeUid ? `
+          <button data-claim-ticket="${escapeHtml(ticket.id)}" type="button"
+            class="min-h-10 rounded-xl bg-indigo-700 px-3 text-xs font-extrabold text-white transition hover:bg-indigo-600 disabled:cursor-wait disabled:opacity-60">
+            Assumir
+          </button>` : ''}
+        <span class="ticket-smart-open" aria-hidden="true">→</span>
+      </div>
     </article>`;
 }
