@@ -143,6 +143,7 @@ function renderCentral() {
       const ticket = tickets.find((item) => item.id === card.dataset.openTicket);
       if (ticket) onOpenTicket?.(ticket);
     };
+
     card.addEventListener('click', open);
     card.addEventListener('keydown', (event) => {
       if (event.target !== card) return;
@@ -231,28 +232,30 @@ function markup(ticket) {
   return `
     <article data-open-ticket="${escapeHtml(ticket.id)}" tabindex="0" role="button"
       aria-label="Abrir ${escapeHtml(ticket.code || 'sinal')}"
-      class="central-ticket ticket-smart priority-${priorityKey}">
-      <div class="min-w-0">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">${escapeHtml(ticket.code)}</span>
-          <span class="ticket-badge ${ticket.status === 'in_progress' ? 'bg-indigo-50 text-indigo-700' : ticket.status === 'resolved' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700'}">${escapeHtml(status)}</span>
-          <span class="ticket-badge ${priorityClass}">${escapeHtml(priority)}</span>
+      class="central-ticket-card ticket-smart priority-${priorityKey}">
+      <div class="central-ticket">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-400">${escapeHtml(ticket.code)}</span>
+            <span class="ticket-badge ${ticket.status === 'in_progress' ? 'bg-indigo-50 text-indigo-700' : ticket.status === 'resolved' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700'}">${escapeHtml(status)}</span>
+            <span class="ticket-badge ${priorityClass}">${escapeHtml(priority)}</span>
+          </div>
+          <h3 class="ticket-title-clamp mt-2 text-sm font-extrabold text-slate-950 sm:text-base">${escapeHtml(ticket.title)}</h3>
+          <p class="ticket-smart-context">${escapeHtml(contextLabel)}</p>
+          <div class="ticket-smart-meta">
+            <span>${escapeHtml(ticket.requesterName)}</span>
+            <span>${escapeHtml(category)}</span>
+            <span title="${escapeHtml(formatDate(ticket.createdAt))}">${escapeHtml(formatRelativeAge(ticket.createdAt))}</span>
+          </div>
         </div>
-        <h3 class="ticket-title-clamp mt-2 text-sm font-extrabold text-slate-950 sm:text-base">${escapeHtml(ticket.title)}</h3>
-        <p class="ticket-smart-context">${escapeHtml(contextLabel)}</p>
-        <div class="ticket-smart-meta">
-          <span>${escapeHtml(ticket.requesterName)}</span>
-          <span>${escapeHtml(category)}</span>
-          <span title="${escapeHtml(formatDate(ticket.createdAt))}">${escapeHtml(formatRelativeAge(ticket.createdAt))}</span>
+
+        <div class="flex items-center gap-2">
+          ${ticket.status === 'open' && !ticket.assigneeUid ? `
+            <button data-claim-ticket="${escapeHtml(ticket.id)}" type="button"
+              class="min-h-10 rounded-xl bg-indigo-700 px-3 text-xs font-extrabold text-white transition hover:bg-indigo-600 disabled:cursor-wait disabled:opacity-60">
+              Assumir
+            </button>` : ''}
         </div>
-      </div>
-      <div class="flex items-center gap-2">
-        ${ticket.status === 'open' && !ticket.assigneeUid ? `
-          <button data-claim-ticket="${escapeHtml(ticket.id)}" type="button"
-            class="min-h-10 rounded-xl bg-indigo-700 px-3 text-xs font-extrabold text-white transition hover:bg-indigo-600 disabled:cursor-wait disabled:opacity-60">
-            Assumir
-          </button>` : ''}
-        <span class="ticket-smart-open" aria-hidden="true">→</span>
       </div>
     </article>`;
 }
