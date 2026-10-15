@@ -3,12 +3,13 @@ import { loadUserContext } from './services/context.service.js';
 import { createTicket, claimTicket, resolveTicket, reopenTicket, getPrivateResolution, observeStatusEvents, getTicketById, observeMyTickets, observeCentralTickets } from './services/tickets.service.js';
 import { observeMessages, sendMessage } from './services/messages.service.js';
 import { initNavigation, isSupportRole, renderContext, showToast } from './ui/app-shell.js';
-import { initSignalComposer, renderTickets } from './ui/signal-composer.js';
+import { initSignalComposer, initMySignalsFilters, renderTickets } from './ui/signal-composer.js';
 import { initCentral, updateCentralTickets, updateCentralUnreadMessages } from './ui/central.js';
 import { initTicketDetail, setTicketDetailContext, resetTicketDetailUi, openTicketDetail, updateSelectedTicket } from './ui/ticket-detail.js';
 import { enablePushNotifications, disablePushNotifications, getPushState, markAllNotificationsRead, markNotificationRead, observeNotifications } from './services/notifications.service.js';
 import { getPwaState, getServiceWorkerRegistration, promptInstall, registerPwa } from './services/pwa.service.js';
 import { initNotificationsUi, renderNotifications, resetNotificationsUiSession } from './ui/notifications.js';
+import { initHome, updateHomeMyTickets, updateHomeCentralTickets, updateHomeNotifications } from './ui/home.js';
 
 const loadingScreen = document.querySelector('#loading-screen');
 const authView = document.querySelector('#auth-view');
@@ -138,10 +139,11 @@ function showContextLoadError(error) {
 function initAuthenticatedUi() {
   if (uiInitialized) return;
   initNavigation();
+  initMySignalsFilters();
   initSignalComposer({
     onSubmit: async (payload) => {
       const ticket = await createTicket(currentContext, payload);
-      showToast(`${ticket.code} foi enviado e já aparece em Meus sinais.`, 'success', { title: 'Sinal recebido' });
+      showToast(`${ticket.code} foi enviado e já aparece em Meus sinais.`, 'success', { title: 'Sinal enviado' });
     }
   });
   uiInitialized = true;
@@ -232,7 +234,7 @@ function refreshPushUi() {
     enable.classList.add('hidden'); disable.classList.add('hidden'); return;
   }
   if (!state.configured) {
-    status.textContent = 'HML aguardando configuração da chave Web Push (VAPID).';
+    status.textContent = 'As notificações push ainda não estão configuradas neste ambiente.';
     enable.classList.remove('hidden'); disable.classList.add('hidden'); return;
   }
   if (state.permission === 'denied') {
@@ -348,6 +350,19 @@ async function renderSignedIn(user) {
     initAuthenticatedUi();
     ensureDetailInitialized(context);
     setTicketDetailContext(context);
+    initHome({
+      context,
+      onOpenTicket: openConversation,
+      onClaimTicket: async (ticket) => {
+        try {
+          await claimTicket(currentContext, ticket);
+          showToast(`${ticket.code} agora está com você.`, 'success', { title: 'Sinal assumido' });
+        } catch (error) {
+          showToast(error?.message || 'Não foi possível assumir este sinal.', 'error', { title: 'Falha ao assumir' });
+          throw error;
+        }
+      }
+    });
 
     if (!document.body.dataset.sprint13Ui) {
       initSprint13Ui();
@@ -360,6 +375,7 @@ async function renderSignedIn(user) {
       context,
       (tickets) => {
         renderTickets(tickets, openConversation);
+        updateHomeMyTickets(tickets);
         tickets.forEach(updateSelectedTicket);
       },
       () => showToast('Não foi possível atualizar sua lista de sinais.', 'error')
@@ -374,6 +390,7 @@ async function renderSignedIn(user) {
       (items, changes) => {
         currentNotifications = items;
         renderNotifications(items, changes, showToast);
+        updateHomeNotifications(items);
         updateCentralUnreadMessages(
           items
             .filter((item) => item.type === 'new_message' && !item.isRead && item.ticketId)
@@ -391,6 +408,7 @@ async function renderSignedIn(user) {
         context,
         (tickets) => {
           updateCentralTickets(tickets);
+          updateHomeCentralTickets(tickets);
           tickets.forEach(updateSelectedTicket);
         },
         () => showToast('Não foi possível atualizar a Central.', 'error')
