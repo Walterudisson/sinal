@@ -1,18 +1,17 @@
 # Sinal — Produção
 
 ## Release atual
-**v1.6.3 — Estabilização operacional** (homologada em HML e preparada para PRD em 17/10/2026)
+**v1.6.3.1 — Notificações na conversa** (homologada em HML em 17/10/2026)
 
-- Origem: [HML Sprint 1.6.3](https://github.com/Walterudisson/sinal-HML/pull/38)
-- Firebase de produção: `sinaldesk`
-- Domínio oficial: https://sinal.app.br
-- Versão apresentada ao usuário: `PRD v1.6.3`
-- Cache PWA de produção: `sinal-shell-prd-1.6.3-stability`
+- Origem: `Walterudisson/sinal-HML` [PR #39](https://github.com/Walterudisson/sinal-HML/pull/39).
+- Firebase PRD: `sinaldesk`.
+- Site oficial: https://sinal.app.br
+- Cache: `sinal-shell-prd-1.6.3.1-conversation-notifications`.
 
-A release aprimora troca de contas, persistência dos filtros, limpeza de notificações e estabilidade da atualização da PWA, sem novas funcionalidades nem alterações no backend.
-
-Consulte [a nota de release PRD](docs/releases/PRD-SPRINT-1.6.3.md).
+Ajuste: novas mensagens na conversa aberta e visível não exibem toast redundante.
+Avisos correspondentes são marcados como lidos, mantendo as notificações para outros sinais
+e o comportamento de Web Push em segundo plano. Sem alterações de Firestore Rules ou Cloud Functions.
 
 ## Processo
-O desenvolvimento permanece isolado em `Walterudisson/sinal-HML` com Firebase `sinaldesk-hml`.
-Somente entregas homologadas são promovidas para este repositório de produção.
+Atualizações são testadas primeiro em `Walterudisson/sinal-HML` (`sinaldesk-hml`).
+A implantação em `main` é reservada a versões homologadas.
