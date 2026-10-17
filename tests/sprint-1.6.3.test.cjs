@@ -19,7 +19,7 @@ function between(src, first, second) {
   return src.slice(start, end);
 }
 
-test('identidade HML v1.6.3 e cache renovado', () => {
+test('identidade PRD v1.6.3.1 e cache renovado', () => {
   assert.match(version, /APP_VERSION = '1\.6\.3\.1'/);
   assert.match(sw, /sinal-shell-prd-1\.6\.3\.1-conversation-notifications/);
   assert.match(firebase, /projectId: 'sinaldesk'/);
