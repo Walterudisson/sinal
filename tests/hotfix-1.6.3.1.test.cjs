@@ -63,7 +63,7 @@ function makeNotificationsHarness() {
   return app;
 }
 
-test('v1.6.3.1 e cache HML distinguíveis', () => {
+test('v1.6.3.1 e cache PRD distinguíveis', () => {
   assert.match(version, /APP_VERSION = '1\.6\.3\.1'/);
   assert.match(worker, /sinal-shell-prd-1\.6\.3\.1-conversation-notifications/);
   assert.match(worker, /projectId: 'sinaldesk'/);
